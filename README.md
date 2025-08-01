@@ -3,94 +3,152 @@
 ## Overview
 
 An error logging service captures and records application errors, provides real-time alerts, and offers a dashboard for analysis.
+---
 
 ## Architecture Breakdown
 
-### 1. Client SDK
+### **1. Client SDK**
 
-**Technology:** JavaScript / TypeScript with React and React Native
+**Technology:** Node.js / JavaScript / TypeScript with React and React Native
 
 **Justification:**
 
-* **Cross-Platform Compatibility:** React Native allows developers to create one unified codebase for Android, iOS, and web applications.
-* **Web Integration:** React seamlessly integrates with modern web frameworks, simplifying implementation across various projects.
-* **Backend Compatibility:** JavaScript and TypeScript SDKs integrate easily with Node.js backend services, maintaining consistency throughout the stack.
-* **Unified Codebase:** Simplifies ongoing maintenance, reduces complexity, and accelerates feature rollout and updates.
-* **Robustness & Maintainability:** TypeScript enhances reliability through strong typing and improved error detection at compile time.
+* **Cross-Platform Compatibility:** One unified SDK can capture logs from web applications (React), mobile applications (React Native), and backend services (Node.js). This reduces the complexity of maintaining separate SDKs for each environment.
+* **Backend & Frontend Coverage:** The SDK integrates with browser error handlers, React error boundaries, and unhandled promise rejections, as well as with Node.js servers to capture exceptions, request/response errors, and unhandled exceptions.
+* **Web Integration:** Compatible with modern JS frameworks like Angular, Vue, and Next.js.
+* **Unified Codebase:** One codebase for all supported environments improves maintainability and feature parity.
+* **Type Safety:** TypeScript provides compile-time type checking and better tooling support.
+* **Performance:** Lightweight, asynchronous log transmission with batching to reduce overhead.
+* **Security:** Optional encryption of log payloads before transmission.
 
-```
-[App/Web/Mobile]
-      |
-[React/React Native SDK]
-      |
-[API Endpoint]
+**Diagram:**
+
+```mermaid
+flowchart TD
+    subgraph Frontend
+        FE[React / React Native SDK]
+    end
+
+    subgraph Backend
+        BE[Node.js SDK]
+    end
+
+    FE --> API[Error Logging API]
+    BE --> API
 ```
 
-### 2. API Backend
+---
+
+### **2. API Backend**
 
 **Technology:** Node.js with NestJS framework
 
 **Justification:**
 
-* Modular, scalable, and maintainable architecture.
-* Handles high volumes of real-time error logs efficiently.
-* Extensive middleware support for authentication, rate limiting, and validation.
+* **Unified Language Stack:** Node.js shares the same language as the SDK.
+* **Scalable & Modular:** NestJS enforces a clean, modular architecture.
+* **Non-blocking I/O:** Handles high-throughput log ingestion efficiently.
+* **Middleware Support:** Integrates authentication, rate-limiting, and validation easily.
+* **WebSocket Ready:** Integrates with Socket.io for real-time updates to the dashboard.
 
-```
-[SDK Clients]
-     |
-[REST API - NestJS]
-     |
-[Middleware]
-(Authentication, Validation, Rate Limit)
-     |
-[Database & Elasticsearch]
+**Responsibilities:**
+
+* Ingest logs from SDK clients.
+* Validate and authenticate incoming data.
+* Enrich logs with metadata.
+* Store structured data in PostgreSQL.
+* Store logs in Elasticsearch for fast querying.
+* Trigger alert workflows for critical errors.
+
+**Diagram:**
+
+```mermaid
+flowchart TD
+    SDKClients[SDK Clients: Frontend + Backend] --> API[REST/WebSocket API - NestJS]
+    API --> Validate[Validation & Auth Middleware]
+    Validate --> Store[Log Processing & Storage]
+    Store --> PG[(PostgreSQL)]
+    Store --> ES[(Elasticsearch)]
 ```
 
-### 3. Database
+---
+
+### **3. Database Layer**
 
 **Primary Storage:** PostgreSQL
 **Secondary Storage:** Elasticsearch
 
-**Justification:**
+**PostgreSQL Benefits:**
 
-* PostgreSQL ensures reliable, structured management of user data, settings, and metadata.
-* Elasticsearch provides high-performance indexing and querying for log data.
-* ILM (Index Lifecycle Management) automates archival, retention, and deletion.
+* ACID-compliant, ideal for user data, configuration, and metadata.
+* Supports JSONB for semi-structured data.
 
+**Elasticsearch Benefits:**
+
+* Optimized for log indexing and full-text search.
+* Real-time indexing for low-latency queries.
+* ILM for automated retention and archival.
+
+**Integration Benefits:**
+
+* Separate structured and unstructured data stores.
+* Independent scaling of each layer.
+
+**Diagram:**
+
+```mermaid
+flowchart TD
+    API[API Backend] --> PG[(PostgreSQL: Structured Data)]
+    API --> ES[(Elasticsearch: Log Data)]
 ```
-[API Backend]
-      |
-Structured Data -> PostgreSQL
-Log Data -> Elasticsearch
-```
 
-### 4. Web Dashboard
+---
+
+### **4. Web Dashboard**
 
 **Frontend:** React (TypeScript), Redux Toolkit, Tailwind CSS
 
 **Justification:**
 
-* React delivers efficient rendering for interactive dashboards.
-* TypeScript and Redux Toolkit improve maintainability.
-* Tailwind CSS ensures consistent, rapid UI styling.
+* **React:** Efficient, component-driven UI framework ideal for highly interactive dashboards.
+* **TypeScript:** Enforces type safety and improves maintainability.
+* **Redux Toolkit:** Centralized state management with simplified patterns for predictable data flow.
+* **Tailwind CSS:** Utility-first CSS framework for rapid development and consistent styling.
 
+**Core Capabilities:**
+
+* **Real-time Log Updates:** Leverages WebSockets to instantly reflect incoming errors.
+* **Advanced Filtering & Search:** Multi-criteria filtering, full-text search, and date-range queries powered by Elasticsearch.
+* **Error Grouping & Trends:** Groups related errors and visualizes frequency over time.
+* **Detailed Error Context:** Displays stack traces, user/session info, and associated metadata.
+* **Role-based Access Control:** Restricts data visibility and actions based on user roles.
+* **Customizable Views:** Allows users to save search filters and preferred layouts.
+* **Responsive Design:** Mobile-friendly UI for monitoring on the go.
+
+**Performance Optimizations:**
+
+* **Virtualized Tables:** Efficiently render thousands of log entries.
+* **Lazy Loading & Code Splitting:** Reduce initial load times.
+* **Memoization:** Prevent unnecessary re-renders for stable UI components.
+
+**Diagram:**
+
+```mermaid
+flowchart TD
+    User[Developer / QA] --> UI[Dashboard: React + Redux + Tailwind]
+    UI --> API[API Backend]
 ```
-[User]
-   |
-[Dashboard (React)]
-   |
-[API Backend]
-```
 
-### 5. Real-time Alerts
+---
 
-**Technologies:** WebSocket via Socket.io, Email notifications via SendGrid or AWS SES
+### **5. Real-time Alerts**
+
+**Technologies:** WebSocket via Socket.io, Email via SendGrid or AWS SES
 
 **Justification:**
 
-* Socket.io ensures instant communication between backend and frontend.
-* SendGrid and AWS SES deliver reliable, scalable email notifications.
+* WebSocket for instant updates.
+* Email for critical incidents.
 
 **Maintenance Costs:**
 
@@ -99,32 +157,24 @@ Log Data -> Elasticsearch
 
 > **Recommendation:** SendGrid for ease, AWS SES for cost-efficiency at scale.
 
-### 6. DevOps & Infrastructure
+---
 
-**Cloud Provider:** AWS
+### **6. DevOps & Infrastructure**
+
+**Cloud:** AWS
 **Containerization:** Docker
 **Orchestration:** Kubernetes (EKS)
-**Monitoring & Alerting:** Prometheus & Grafana
-**CI/CD:** GitHub Actions or GitLab CI/CD
+**Monitoring:** Prometheus & Grafana
+**CI/CD:** GitHub Actions / GitLab CI/CD
 
 **Justification:**
 
-* AWS offers scalable, secure cloud services.
-* Docker and Kubernetes streamline deployments and scaling.
-* Prometheus & Grafana provide robust monitoring and analytics.
-* CI/CD automates delivery and reduces errors.
+* AWS for scalable infrastructure.
+* Docker + Kubernetes for deployment automation.
+* Prometheus & Grafana for monitoring and alerting.
+* CI/CD for continuous delivery.
 
-```
-[Source Code]
-     |
-[CI/CD Pipeline]
-     |
-[Docker Containers]
-     |
-[Kubernetes Cluster]
-     |
-[AWS Infrastructure]
-```
+---
 
 ## Key Decisions Explained
 
