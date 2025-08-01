@@ -1,9 +1,5 @@
 # Error Logging Service Architecture
 
-## Overview
-
-An error logging service captures and records application errors, provides real-time alerts, and offers a dashboard for analysis.
----
 
 ## Architecture Breakdown
 
