@@ -5,7 +5,7 @@
 
 ### **1. Client SDK**
 
-**Technology:** Node.js / JavaScript / TypeScript with React and React Native
+**Technology:** Node.js / TypeScript with React and React Native
 
 **Justification:**
 
